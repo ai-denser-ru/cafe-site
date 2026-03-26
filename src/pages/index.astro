@@ -1,0 +1,67 @@
+---
+/**
+ * Root index — serves default locale (es) content directly.
+ * Also handles auto-detection of user language.
+ */
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { defaultLocale, type Locale } from '../i18n/ui';
+import { getLocalizedUrl, getSlugFromId, useTranslations } from '../i18n/utils';
+
+const locale: Locale = defaultLocale;
+const t = useTranslations(locale);
+const prefix = `${locale}/`;
+
+const allPages = await getCollection('pages', ({ id, data }) => !data.draft && id.startsWith(prefix));
+const homePage = allPages.find((p) => getSlugFromId(p.id) === 'index');
+
+let Content: any = null;
+let title = t('nav.home');
+let description = '';
+
+if (homePage) {
+  const rendered = await render(homePage);
+  Content = rendered.Content;
+  title = homePage.data.title;
+  description = homePage.data.description ?? '';
+}
+
+const nodes = await getCollection('nodes', ({ id, data }) => !data.draft && id.startsWith(prefix));
+---
+
+<BaseLayout title={title} description={description} locale={locale}>
+  {Content && (
+    <article class="prose prose-invert prose-indigo max-w-none mb-16">
+      <Content />
+    </article>
+  )}
+
+  {nodes.length > 0 && (
+    <section>
+      <h2 class="text-2xl font-bold text-gray-100 mb-6">{t('catalog.title')}</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {nodes.map((node) => (
+          <a
+            href={getLocalizedUrl(locale, `/nodes/${getSlugFromId(node.id)}/`)}
+            class="group block bg-gray-900 rounded-2xl border border-gray-800 p-6 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300">
+                {t(`type.${node.data.type}`)}
+              </span>
+              {node.data.price && (
+                <span class="text-sm font-semibold text-cyan-400">{node.data.price}</span>
+              )}
+            </div>
+            <h3 class="text-lg font-semibold text-gray-100 group-hover:text-indigo-300 transition-colors">
+              {node.data.title}
+            </h3>
+            {node.data.description && (
+              <p class="mt-2 text-sm text-gray-400 line-clamp-2">{node.data.description}</p>
+            )}
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+</BaseLayout>

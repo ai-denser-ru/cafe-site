@@ -1,0 +1,119 @@
+---
+import { getCollection } from 'astro:content';
+import { getLocalizedUrl } from '../i18n/utils';
+import { locales, localeLabels, defaultLocale, type Locale } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  currentPath?: string;
+}
+
+const { locale, currentPath = '/' } = Astro.props;
+
+// Get localized navigation settings
+const settingsEntries = await getCollection('settings');
+const navEntry = settingsEntries.find((e) => {
+  const data = e.data as { locale?: string };
+  return e.id.startsWith('navigation') && (data.locale === locale || e.id.endsWith(`.${locale}`));
+}) ?? settingsEntries.find((e) => e.id.startsWith('navigation') && ((e.data as { locale?: string }).locale === defaultLocale || e.id.endsWith(`.${defaultLocale}`)));
+
+const navData = navEntry?.data as { main_menu?: { label: string; href: string }[] } | undefined;
+const menuItems = navData?.main_menu ?? [];
+
+const bizEntry = settingsEntries.find((e) => {
+  const data = e.data as { locale?: string };
+  return e.id.startsWith('business') && (data.locale === locale || e.id.endsWith(`.${locale}`));
+}) ?? settingsEntries.find((e) => e.id.startsWith('business') && ((e.data as { locale?: string }).locale === defaultLocale || e.id.endsWith(`.${defaultLocale}`)));
+
+const biz = (bizEntry?.data ?? {}) as { name?: string };
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+function localizeHref(href: string): string {
+  if (href.startsWith('#') || href.startsWith('http')) return href;
+  return getLocalizedUrl(locale, href);
+}
+---
+
+<header class="sticky top-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-800">
+  <nav class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[4rem] flex flex-wrap items-center justify-between py-2 gap-y-2">
+    <a href={getLocalizedUrl(locale, '/')} class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent hover:from-indigo-300 hover:to-cyan-300 transition-all duration-300 shrink-0">
+      {biz.name ?? 'Agentic CMS'}
+    </a>
+
+    <div class="flex flex-wrap items-center justify-end gap-x-1 gap-y-2 max-w-full">
+      <ul class="flex flex-wrap items-center justify-end gap-1">
+        {menuItems.map((item) => (
+          <li>
+            <a
+              href={localizeHref(item.href)}
+              class="px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-all duration-200"
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      {/* Language switcher */}
+      <div class="relative ml-3" id="lang-switcher">
+        <button
+          id="lang-toggle"
+          class="px-2 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-all duration-200 uppercase tracking-wider border border-gray-700"
+          aria-expanded="false"
+          aria-haspopup="true"
+        >
+          {locale === 'pt-br' ? 'PT' : locale.toUpperCase()}
+        </button>
+        <div
+          id="lang-dropdown"
+          class="absolute right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-xl opacity-0 invisible transition-all duration-200 min-w-[140px] z-50"
+        >
+          {locales.filter((l) => l !== locale).map((l) => (
+            <a
+              href={getLocalizedUrl(l, currentPath)}
+              class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 first:rounded-t-lg last:rounded-b-lg transition-colors"
+            >
+              {localeLabels[l]}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<style>
+  /* Desktop hover support — only on devices that support hover */
+  @media (hover: hover) {
+    #lang-switcher:hover #lang-dropdown {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+</style>
+
+<script>
+  // Script runs directly since astro:page-load only works when ViewTransitions are enabled
+  const toggle = document.getElementById('lang-toggle');
+  const dropdown = document.getElementById('lang-dropdown');
+  
+  if (toggle && dropdown) {
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = dropdown.classList.contains('!opacity-100');
+      if (isOpen) {
+        dropdown.classList.remove('!opacity-100', '!visible');
+        toggle.setAttribute('aria-expanded', 'false');
+      } else {
+        dropdown.classList.add('!opacity-100', '!visible');
+        toggle.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    document.addEventListener('click', () => {
+      dropdown.classList.remove('!opacity-100', '!visible');
+      toggle.setAttribute('aria-expanded', 'false');
+    });
+  }
+</script>

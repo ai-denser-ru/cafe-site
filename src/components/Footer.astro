@@ -1,0 +1,81 @@
+---
+import { getCollection } from 'astro:content';
+import { useTranslations } from '../i18n/utils';
+import { defaultLocale, type Locale } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+
+// Get localized business settings
+const settingsEntries = await getCollection('settings');
+const bizEntry = settingsEntries.find((e) => {
+  const data = e.data as { locale?: string };
+  return e.id.startsWith('business') && (data.locale === locale || e.id.endsWith(`.${locale}`));
+}) ?? settingsEntries.find((e) => e.id.startsWith('business') && ((e.data as { locale?: string }).locale === defaultLocale || e.id.endsWith(`.${defaultLocale}`)));
+
+interface BusinessData {
+  name?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  hours?: { weekdays?: string; weekends?: string };
+  social?: { telegram?: string; instagram?: string };
+}
+
+const biz = (bizEntry?.data ?? {}) as BusinessData;
+---
+
+<footer class="bg-gray-900 border-t border-gray-800 mt-auto">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+      {/* Brand */}
+      <div>
+        <h3 class="text-lg font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+          {biz.name ?? 'Agentic CMS'}
+        </h3>
+      </div>
+
+      {/* Contacts */}
+      <div>
+        <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">{t('footer.contacts')}</h4>
+        <ul class="space-y-1.5 text-sm text-gray-400">
+          {biz.phone && <li>📞 {biz.phone}</li>}
+          {biz.email && <li>✉️ {biz.email}</li>}
+          {biz.address && <li>📍 {biz.address}</li>}
+        </ul>
+      </div>
+
+      {/* Hours */}
+      <div>
+        <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">{t('footer.hours')}</h4>
+        <ul class="space-y-1.5 text-sm text-gray-400">
+          {biz.hours?.weekdays && <li>{t('footer.weekdays')}: {biz.hours.weekdays}</li>}
+          {biz.hours?.weekends && <li>{t('footer.weekends')}: {biz.hours.weekends}</li>}
+        </ul>
+        {biz.social && (
+          <div class="mt-4 flex gap-3">
+            {biz.social.telegram && (
+              <a href={biz.social.telegram} target="_blank" rel="noopener" class="text-gray-400 hover:text-indigo-400 transition-colors text-sm">
+                Telegram
+              </a>
+            )}
+            {biz.social.instagram && (
+              <a href={biz.social.instagram} target="_blank" rel="noopener" class="text-gray-400 hover:text-indigo-400 transition-colors text-sm">
+                Instagram
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-gray-800 text-center text-xs text-gray-500">
+      © {new Date().getFullYear()} {biz.name ?? 'Agentic CMS'}. {t('footer.powered')}
+    </div>
+  </div>
+</footer>

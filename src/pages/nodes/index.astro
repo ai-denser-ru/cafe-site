@@ -1,0 +1,49 @@
+---
+/**
+ * Default locale nodes index: /nodes/
+ */
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale, type Locale } from '../../i18n/ui';
+import { getLocalizedUrl, getSlugFromId, useTranslations } from '../../i18n/utils';
+
+const locale: Locale = defaultLocale;
+const t = useTranslations(locale);
+const prefix = `${locale}/`;
+
+const nodes = await getCollection('nodes', ({ id, data }) => !data.draft && id.startsWith(prefix));
+---
+
+<BaseLayout title={t('catalog.title')} description={t('catalog.title')} locale={locale}>
+  <nav class="mb-6 text-sm text-gray-500">
+    <a href={getLocalizedUrl(locale, '/')} class="hover:text-indigo-400 transition-colors">{t('home.breadcrumb')}</a>
+    <span class="mx-2">›</span>
+    <span class="text-gray-300">{t('catalog.breadcrumb')}</span>
+  </nav>
+
+  <h1 class="text-3xl font-bold text-gray-100 mb-8">{t('catalog.title')}</h1>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {nodes.map((node) => (
+      <a
+        href={getLocalizedUrl(locale, `/nodes/${getSlugFromId(node.id)}/`)}
+        class="group block bg-gray-900 rounded-2xl border border-gray-800 p-6 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300">
+            {t(`type.${node.data.type}`)}
+          </span>
+          {node.data.price && (
+            <span class="text-sm font-semibold text-cyan-400">{node.data.price}</span>
+          )}
+        </div>
+        <h2 class="text-lg font-semibold text-gray-100 group-hover:text-indigo-300 transition-colors">
+          {node.data.title}
+        </h2>
+        {node.data.description && (
+          <p class="mt-2 text-sm text-gray-400 line-clamp-2">{node.data.description}</p>
+        )}
+      </a>
+    ))}
+  </div>
+</BaseLayout>

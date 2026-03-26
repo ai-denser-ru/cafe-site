@@ -1,0 +1,130 @@
+---
+/**
+ * Non-default locale nodes:
+ * /en/nodes/ → English catalog
+ * /en/nodes/espresso/ → English espresso
+ * /ru/nodes/ → Russian catalog
+ * etc.
+ */
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { locales, defaultLocale, type Locale } from '../../../i18n/ui';
+import { getLocalizedUrl, getSlugFromId, useTranslations } from '../../../i18n/utils';
+
+export async function getStaticPaths() {
+  const allNodes = await getCollection('nodes', ({ data }) => !data.draft);
+  const nonDefaultLocales = locales.filter((l) => l !== defaultLocale);
+  const paths: any[] = [];
+
+  for (const lang of nonDefaultLocales) {
+    const prefix = `${lang}/`;
+    const localeNodes = allNodes.filter((n) => n.id.startsWith(prefix));
+
+    // Node index: /en/nodes/
+    paths.push({
+      params: { lang, slug: undefined },
+      props: { lang, isIndex: true, nodes: localeNodes, node: null },
+    });
+
+    // Individual nodes: /en/nodes/espresso/
+    for (const node of localeNodes) {
+      paths.push({
+        params: { lang, slug: getSlugFromId(node.id) },
+        props: { lang, isIndex: false, nodes: [], node },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { lang, isIndex, nodes, node } = Astro.props;
+const locale = lang as Locale;
+const t = useTranslations(locale);
+
+let Content: any = null;
+if (!isIndex && node) {
+  const rendered = await render(node);
+  Content = rendered.Content;
+}
+---
+
+<BaseLayout
+  title={isIndex ? t('catalog.title') : node?.data.title ?? ''}
+  description={isIndex ? t('catalog.title') : node?.data.description}
+  locale={locale}
+>
+  {/* Breadcrumb */}
+  <nav class="mb-6 text-sm text-gray-500">
+    <a href={getLocalizedUrl(locale, '/')} class="hover:text-indigo-400 transition-colors">{t('home.breadcrumb')}</a>
+    <span class="mx-2">›</span>
+    {isIndex ? (
+      <span class="text-gray-300">{t('catalog.breadcrumb')}</span>
+    ) : (
+      <>
+        <a href={getLocalizedUrl(locale, '/nodes/')} class="hover:text-indigo-400 transition-colors">{t('catalog.breadcrumb')}</a>
+        <span class="mx-2">›</span>
+        <span class="text-gray-300">{node?.data.title}</span>
+      </>
+    )}
+  </nav>
+
+  {isIndex ? (
+    <>
+      <h1 class="text-3xl font-bold text-gray-100 mb-8">{t('catalog.title')}</h1>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {(nodes ?? []).map((n: any) => (
+          <a
+            href={getLocalizedUrl(locale, `/nodes/${getSlugFromId(n.id)}/`)}
+            class="group block bg-gray-900 rounded-2xl border border-gray-800 p-6 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300">
+                {t(`type.${n.data.type}`)}
+              </span>
+              {n.data.price && (
+                <span class="text-sm font-semibold text-cyan-400">{n.data.price}</span>
+              )}
+            </div>
+            <h2 class="text-lg font-semibold text-gray-100 group-hover:text-indigo-300 transition-colors">
+              {n.data.title}
+            </h2>
+            {n.data.description && (
+              <p class="mt-2 text-sm text-gray-400 line-clamp-2">{n.data.description}</p>
+            )}
+          </a>
+        ))}
+      </div>
+    </>
+  ) : node && Content && (
+    <>
+      <div class="flex flex-wrap items-center gap-3 mb-6">
+        <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300">
+          {t(`type.${node.data.type}`)}
+        </span>
+        {node.data.price && (
+          <span class="text-lg font-bold text-cyan-400">{node.data.price}</span>
+        )}
+        {node.data.date && (
+          <time datetime={node.data.date.toISOString()} class="text-xs text-gray-500">
+            {node.data.date.toLocaleDateString(locale === 'pt-br' ? 'pt-BR' : locale, { year: 'numeric', month: 'long', day: 'numeric' })}
+          </time>
+        )}
+      </div>
+
+      {node.data.taxonomies && node.data.taxonomies.length > 0 && (
+        <div class="flex flex-wrap gap-2 mb-8">
+          {node.data.taxonomies.map((tax: string) => (
+            <span class="px-2.5 py-0.5 rounded-md text-xs bg-gray-800 text-gray-400 border border-gray-700">
+              {tax}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <article class="prose prose-invert prose-indigo max-w-none">
+        <Content />
+      </article>
+    </>
+  )}
+</BaseLayout>

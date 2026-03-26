@@ -1,0 +1,10 @@
+{
+  "id": "navigation-en",
+  "locale": "en",
+  "main_menu": [
+    { "label": "Home", "href": "/" },
+    { "label": "About", "href": "/about/" },
+    { "label": "Catalog", "href": "/nodes/" },
+    { "label": "Contacts", "href": "#contacts" }
+  ]
+}

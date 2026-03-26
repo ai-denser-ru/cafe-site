@@ -1,0 +1,97 @@
+---
+/**
+ * Non-default locale index + pages:
+ * /en/ → English home
+ * /ru/ → Russian home
+ * /pt-br/ → Portuguese home
+ * /en/about/ → English about
+ * etc.
+ */
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { locales, defaultLocale, type Locale } from '../../i18n/ui';
+import { getLocalizedUrl, getSlugFromId, useTranslations } from '../../i18n/utils';
+
+export async function getStaticPaths() {
+  const nonDefaultLocales = locales.filter((l) => l !== defaultLocale);
+  const allPages = await getCollection('pages', ({ data }) => !data.draft);
+  const allNodes = await getCollection('nodes', ({ data }) => !data.draft);
+  const paths: any[] = [];
+
+  for (const lang of nonDefaultLocales) {
+    const prefix = `${lang}/`;
+    const localePages = allPages.filter((p) => p.id.startsWith(prefix));
+    const localeNodes = allNodes.filter((n) => n.id.startsWith(prefix));
+
+    // Index page: /en/, /ru/, /pt-br/
+    const indexPage = localePages.find((p) => getSlugFromId(p.id) === 'index');
+    paths.push({
+      params: { lang, slug: undefined },
+      props: { lang, isIndex: true, page: indexPage, nodes: localeNodes },
+    });
+
+    // Other pages: /en/about/, /ru/about/, etc.
+    for (const page of localePages) {
+      const s = getSlugFromId(page.id);
+      if (s === 'index') continue;
+      paths.push({
+        params: { lang, slug: s },
+        props: { lang, isIndex: false, page, nodes: [] },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { lang, isIndex, page, nodes } = Astro.props;
+const locale = lang as Locale;
+const t = useTranslations(locale);
+
+let Content: any = null;
+if (page) {
+  const rendered = await render(page);
+  Content = rendered.Content;
+}
+---
+
+<BaseLayout
+  title={page?.data.title ?? t('nav.home')}
+  description={page?.data.description}
+  locale={locale}
+>
+  {Content && (
+    <article class={`prose prose-invert prose-indigo max-w-none ${isIndex ? 'mb-16' : ''}`}>
+      <Content />
+    </article>
+  )}
+
+  {isIndex && nodes.length > 0 && (
+    <section>
+      <h2 class="text-2xl font-bold text-gray-100 mb-6">{t('catalog.title')}</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {nodes.map((node: any) => (
+          <a
+            href={getLocalizedUrl(locale, `/nodes/${getSlugFromId(node.id)}/`)}
+            class="group block bg-gray-900 rounded-2xl border border-gray-800 p-6 hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300">
+                {t(`type.${node.data.type}`)}
+              </span>
+              {node.data.price && (
+                <span class="text-sm font-semibold text-cyan-400">{node.data.price}</span>
+              )}
+            </div>
+            <h3 class="text-lg font-semibold text-gray-100 group-hover:text-indigo-300 transition-colors">
+              {node.data.title}
+            </h3>
+            {node.data.description && (
+              <p class="mt-2 text-sm text-gray-400 line-clamp-2">{node.data.description}</p>
+            )}
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+</BaseLayout>

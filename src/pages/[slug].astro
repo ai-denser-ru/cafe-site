@@ -1,0 +1,31 @@
+---
+/**
+ * Default locale pages: /about/, /contacts/, etc.
+ * Only generates paths for the default locale (es).
+ */
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { defaultLocale, type Locale } from '../i18n/ui';
+import { getSlugFromId } from '../i18n/utils';
+
+const locale: Locale = defaultLocale;
+
+export async function getStaticPaths() {
+  const pages = await getCollection('pages', ({ data }) => !data.draft);
+  const prefix = `${defaultLocale}/`;
+  const defaultPages = pages.filter((p) => p.id.startsWith(prefix) && getSlugFromId(p.id) !== 'index');
+  return defaultPages.map((page) => ({
+    params: { slug: getSlugFromId(page.id) },
+    props: { page },
+  }));
+}
+
+const { page } = Astro.props;
+const { Content } = await render(page);
+---
+
+<BaseLayout title={page.data.title} description={page.data.description} locale={locale}>
+  <article class="prose prose-invert prose-indigo max-w-none">
+    <Content />
+  </article>
+</BaseLayout>

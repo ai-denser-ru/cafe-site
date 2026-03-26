@@ -1,0 +1,63 @@
+---
+/**
+ * Default locale node detail: /nodes/espresso/, /nodes/morning-yoga/
+ */
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale, type Locale } from '../../i18n/ui';
+import { getLocalizedUrl, getSlugFromId, useTranslations } from '../../i18n/utils';
+
+const locale: Locale = defaultLocale;
+const t = useTranslations(locale);
+
+export async function getStaticPaths() {
+  const nodes = await getCollection('nodes', ({ data }) => !data.draft);
+  const prefix = `${defaultLocale}/`;
+  const defaultNodes = nodes.filter((n) => n.id.startsWith(prefix));
+  return defaultNodes.map((node) => ({
+    params: { slug: getSlugFromId(node.id) },
+    props: { node },
+  }));
+}
+
+const { node } = Astro.props;
+const { Content } = await render(node);
+---
+
+<BaseLayout title={node.data.title} description={node.data.description} locale={locale}>
+  <nav class="mb-6 text-sm text-gray-500">
+    <a href={getLocalizedUrl(locale, '/')} class="hover:text-indigo-400 transition-colors">{t('home.breadcrumb')}</a>
+    <span class="mx-2">›</span>
+    <a href={getLocalizedUrl(locale, '/nodes/')} class="hover:text-indigo-400 transition-colors">{t('catalog.breadcrumb')}</a>
+    <span class="mx-2">›</span>
+    <span class="text-gray-300">{node.data.title}</span>
+  </nav>
+
+  <div class="flex flex-wrap items-center gap-3 mb-6">
+    <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300">
+      {t(`type.${node.data.type}`)}
+    </span>
+    {node.data.price && (
+      <span class="text-lg font-bold text-cyan-400">{node.data.price}</span>
+    )}
+    {node.data.date && (
+      <time datetime={node.data.date.toISOString()} class="text-xs text-gray-500">
+        {node.data.date.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })}
+      </time>
+    )}
+  </div>
+
+  {node.data.taxonomies && node.data.taxonomies.length > 0 && (
+    <div class="flex flex-wrap gap-2 mb-8">
+      {node.data.taxonomies.map((tax: string) => (
+        <span class="px-2.5 py-0.5 rounded-md text-xs bg-gray-800 text-gray-400 border border-gray-700">
+          {tax}
+        </span>
+      ))}
+    </div>
+  )}
+
+  <article class="prose prose-invert prose-indigo max-w-none">
+    <Content />
+  </article>
+</BaseLayout>
