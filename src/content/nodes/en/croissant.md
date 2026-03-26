@@ -1,7 +1,7 @@
 ---
 title: Croissant
 description: Classic French butter croissant.
-price: 180
+price: "180"
 image: "/images/croissant.jpg"
 draft: false
 ---

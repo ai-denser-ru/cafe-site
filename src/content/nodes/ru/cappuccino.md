@@ -1,7 +1,7 @@
 ---
 title: Капучино
 description: Классический кофейный напиток с нежной молочной пенкой.
-price: 200
+price: "200"
 image: "/images/cappuccino.jpg"
 draft: false
 ---

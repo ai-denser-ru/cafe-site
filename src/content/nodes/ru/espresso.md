@@ -1,7 +1,7 @@
 ---
 title: Эспрессо
 description: Наш фирменный эспрессо с насыщенным вкусом.
-price: 150
+price: "150"
 image: "/images/espresso.jpg"
 draft: false
 ---

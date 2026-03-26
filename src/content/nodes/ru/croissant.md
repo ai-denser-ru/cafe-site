@@ -1,7 +1,7 @@
 ---
 title: Круассан
 description: Классический французский круассан на сливочном масле.
-price: 180
+price: "180"
 image: "/images/croissant.jpg"
 draft: false
 ---

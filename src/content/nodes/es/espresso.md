@@ -1,7 +1,7 @@
 ---
 title: Espresso
 description: Nuestro espresso de la casa con un sabor intenso.
-price: 150
+price: "150"
 image: "/images/espresso.jpg"
 draft: false
 ---

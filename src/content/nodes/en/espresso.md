@@ -1,7 +1,7 @@
 ---
 title: Espresso
 description: Our signature espresso with a rich flavor.
-price: 150
+price: "150"
 image: "/images/espresso.jpg"
 draft: false
 ---

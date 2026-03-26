@@ -1,7 +1,7 @@
 ---
 title: Cappuccino
 description: Bebida de café clássica com espuma de leite delicada.
-price: 200
+price: "200"
 image: "/images/cappuccino.jpg"
 draft: false
 ---

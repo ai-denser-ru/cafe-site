@@ -1,7 +1,7 @@
 ---
 title: Expresso
 description: Nosso expresso exclusivo com sabor rico.
-price: 150
+price: "150"
 image: "/images/espresso.jpg"
 draft: false
 ---

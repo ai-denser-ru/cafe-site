@@ -1,7 +1,7 @@
 ---
 title: Cappuccino
 description: Classic coffee drink with delicate milk foam.
-price: 200
+price: "200"
 image: "/images/cappuccino.jpg"
 draft: false
 ---
